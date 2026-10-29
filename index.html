@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' rewind:; script-src 'self' rewind: 'wasm-unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' rewind: https: data: blob:; worker-src 'self' rewind: blob:; connect-src 'self' rewind: https:; media-src 'self' rewind: https: blob:;">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>REWIND Studio</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head>
+<body data-view="boot">
+  <!-- ───────────────────────────── Splash ───────────────────────────── -->
+  <div id="splash" class="splash">
+    <div class="splash-grid"></div>
+    <div class="splash-orb splash-orb-a"></div>
+    <div class="splash-orb splash-orb-b"></div>
+    <div class="splash-inner">
+      <div class="splash-brand">
+        <img src="./assets/rewind-mark.svg" alt="">
+        <div><b>REWIND</b><span>STUDIO</span></div>
+      </div>
+      <div class="splash-title">Build <span>anything.</span></div>
+      <p id="splash-status">Starting the studio engine…</p>
+      <div class="splash-track"><div id="splash-bar"></div></div>
+      <div class="splash-meta"><span id="splash-percent">0%</span><span id="splash-version">v0.2.0</span></div>
+      <div class="splash-note">Projects stay local. Sign in when you want to publish.</div>
+    </div>
+  </div>
+
+  <div id="app" class="app hidden">
+    <!-- ───────────────────────────── Titlebar ───────────────────────────── -->
+    <header class="titlebar">
+      <button id="brand-home" class="brand" title="REWIND Studio home">
+        <img src="./assets/rewind-mark.svg" alt="">
+        <b>REWIND</b><span>STUDIO</span>
+      </button>
+
+      <div class="view-switch" role="tablist" aria-label="Studio views">
+        <button id="view-home" data-view-target="home" class="active" role="tab">Home</button>
+        <button id="view-editor" data-view-target="editor" class="hidden" role="tab">Editor</button>
+      </div>
+
+      <div class="project-tab hidden" id="project-tab">
+        <span class="unsaved-dot" id="dirty-dot"></span>
+        <input id="project-title" value="Untitled Place" aria-label="Project name" spellcheck="false">
+        <span class="file-type" id="file-type">LOCAL</span>
+        <span class="file-type cloud hidden" id="remote-badge">CLOUD</span>
+      </div>
+
+      <div class="title-actions">
+        <button id="open-project" class="subtle hidden" title="Open a project file">Open</button>
+        <button id="save-project" class="subtle hidden" title="Save project">Save</button>
+        <button id="export-project" class="subtle hidden" title="Export place file">Export</button>
+        <button id="publish" class="primary hidden">Publish</button>
+        <button id="account-chip" class="account-chip" title="REWIND account">
+          <span class="avatar avatar-sm" id="account-avatar">?</span>
+          <span id="account-name">Sign in</span>
+        </button>
+        <button id="open-settings" class="icon-button" title="Studio settings">⚙</button>
+      </div>
+    </header>
+
+    <!-- ───────────────────────────── Home / Hub ───────────────────────────── -->
+    <main id="home-screen" class="screen home-screen">
+      <aside class="home-nav">
+        <div class="home-profile" id="home-profile">
+          <span class="avatar avatar-lg" id="home-avatar">?</span>
+          <div class="home-profile-copy">
+            <b id="home-name">Guest</b>
+            <small id="home-handle">Not signed in</small>
+          </div>
+          <button class="icon-button tiny" id="home-profile-action" title="Account">→</button>
+        </div>
+
+        <nav class="home-nav-links" aria-label="Home sections">
+          <button class="active" data-home-page="home"><i>⌂</i>Home</button>
+          <button data-home-page="experiences"><i>▦</i>My Experiences <span id="experience-count" class="nav-badge">0</span></button>
+          <button data-home-page="local"><i>▤</i>Local Projects <span id="local-count" class="nav-badge">0</span></button>
+          <button data-home-page="settings"><i>⚙</i>Studio Settings</button>
+          <button data-home-page="account"><i>◉</i>Account</button>
+        </nav>
+
+        <div class="home-nav-card">
+          <span class="eyebrow">QUICK START</span>
+          <p>New here? Start from a template or open a local <code>.rwdproj</code> file.</p>
+          <button class="wide-action" id="nav-create">＋ Create experience</button>
+        </div>
+
+        <div class="home-nav-foot">
+          <div class="api-row"><span class="api-dot" id="api-dot"></span><span id="api-status">Connecting…</span></div>
+          <span id="app-version">REWIND Studio</span>
+          <button id="nav-web" class="link-button">rwd.2bd.net ↗</button>
+        </div>
+      </aside>
+
+      <section class="home-main">
+        <!-- Home page -->
+        <div id="home-page" class="home-page">
+          <header class="home-hero">
+            <div class="hero-copy">
+              <span class="eyebrow">REWIND STUDIO</span>
+              <h1>Create worlds.<br><span>Publish them.</span></h1>
+              <p>Build 3D experiences with parts, skyboxes, lighting, UI, and Luau. Save everything locally, then publish when you are ready.</p>
+              <div class="hero-actions">
+                <button class="primary large" id="home-create">＋ Create new experience</button>
+                <button class="subtle large" id="home-open">Open local project</button>
+                <button class="subtle large" id="home-browse-local">Local library</button>
+              </div>
+            </div>
+            <div class="hero-art" aria-hidden="true">
+              <div class="hero-card hero-card-a"><span></span><span></span><span></span></div>
+              <div class="hero-card hero-card-b"><b>▰</b><small>Part</small></div>
+              <div class="hero-card hero-card-c"><b>✦</b><small>Skybox</small></div>
+            </div>
+          </header>
+
+          <section class="home-section">
+            <div class="section-head"><h2>Start from a template</h2><span>Five ready-to-edit bases</span></div>
+            <div id="template-strip" class="template-strip"></div>
+          </section>
+
+          <section class="home-section">
+            <div class="section-head">
+              <h2>Recent experiences</h2>
+              <button class="link-button" data-home-jump="experiences">View all →</button>
+            </div>
+            <div id="home-experience-grid" class="experience-grid"></div>
+          </section>
+
+          <section class="home-section">
+            <div class="section-head">
+              <h2>Local projects</h2>
+              <button class="link-button" data-home-jump="local">Open library →</button>
+            </div>
+            <div id="home-local-grid" class="local-grid"></div>
+          </section>
+        </div>
+
+        <!-- Experiences page -->
+        <div id="experiences-page" class="home-page hidden">
+          <header class="page-head">
+            <div><span class="eyebrow">CREATOR DASHBOARD</span><h1>My Experiences</h1><p>Your REWIND places, including published worlds and private drafts.</p></div>
+            <div class="page-actions">
+              <button class="subtle" id="refresh-experiences">Refresh</button>
+              <button class="primary" id="create-experience">＋ Create experience</button>
+            </div>
+          </header>
+          <div id="experiences-empty" class="empty-state hidden"></div>
+          <div id="experiences-list" class="experience-grid"></div>
+        </div>
+
+        <!-- Local projects page -->
+        <div id="local-page" class="home-page hidden">
+          <header class="page-head">
+            <div><span class="eyebrow">ON THIS COMPUTER</span><h1>Local Projects</h1><p>These <code>.rwdproj</code> files live in your REWIND Studio project folder and work offline.</p></div>
+            <div class="page-actions">
+              <button class="subtle" id="local-refresh">Refresh</button>
+              <button class="subtle" id="local-open-file">Open file…</button>
+              <button class="primary" id="new-local-project">＋ New local project</button>
+            </div>
+          </header>
+          <div id="local-projects-list" class="local-list"></div>
+        </div>
+
+        <!-- Settings page -->
+        <div id="settings-page" class="home-page hidden">
+          <header class="page-head">
+            <div><span class="eyebrow">PREFERENCES</span><h1>Studio Settings</h1><p>Rendering, sky, fonts, colors, and editor behaviour. Changes apply immediately.</p></div>
+            <div class="page-actions">
+              <button class="subtle" id="settings-reset">Reset defaults</button>
+              <button class="primary" id="settings-close">Back to home</button>
+            </div>
+          </header>
+
+          <div class="settings-grid">
+            <article class="settings-card">
+              <h3><span>◈</span>Graphics</h3>
+              <label class="setting-row"><span>Quality preset</span><select data-setting="render.quality"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="ultra">Ultra</option></select></label>
+              <label class="setting-row"><span>Anti-aliasing <small>restart</small></span><input type="checkbox" data-setting="render.antialias"></label>
+              <label class="setting-row"><span>Shadows</span><input type="checkbox" data-setting="render.shadows"></label>
+              <label class="setting-row"><span>Shadow resolution</span><select data-setting="render.shadowMap"><option value="512">512</option><option value="1024">1024</option><option value="2048">2048</option><option value="4096">4096</option></select></label>
+              <label class="setting-row"><span>Bloom</span><input type="checkbox" data-setting="render.bloom"></label>
+              <label class="setting-row"><span>Bloom strength</span><input type="range" min="0" max="2" step="0.05" data-setting="render.bloomStrength"><output data-value="render.bloomStrength"></output></label>
+              <label class="setting-row"><span>Tone mapping</span><select data-setting="render.toneMapping"><option value="ACESFilmic">ACES Filmic</option><option value="Reinhard">Reinhard</option><option value="Cineon">Cineon</option><option value="Linear">Linear</option><option value="None">None</option></select></label>
+              <label class="setting-row"><span>Exposure</span><input type="range" min="0.2" max="2.5" step="0.05" data-setting="render.exposure"><output data-value="render.exposure"></output></label>
+              <label class="setting-row"><span>Field of view</span><input type="range" min="30" max="100" step="1" data-setting="render.fov"><output data-value="render.fov"></output></label>
+              <label class="setting-row"><span>Render scale</span><input type="range" min="0.5" max="2" step="0.05" data-setting="render.pixelRatio"><output data-value="render.pixelRatio"></output></label>
+              <label class="setting-row"><span>Fog</span><input type="checkbox" data-setting="render.fog"></label>
+              <label class="setting-row"><span>Grid</span><input type="checkbox" data-setting="render.showGrid"></label>
+              <label class="setting-row"><span>Axes</span><input type="checkbox" data-setting="render.showAxes"></label>
+            </article>
+
+            <article class="settings-card">
+              <h3><span>✦</span>Sky &amp; lighting</h3>
+              <label class="setting-row"><span>Default skybox</span><select data-setting="sky.preset"><option value="studio">Studio</option><option value="day">Daylight</option><option value="sunset">Golden hour</option><option value="night">Night</option><option value="nebula">Nebula</option><option value="void">Void</option></select></label>
+              <label class="setting-row"><span>Sun elevation</span><input type="range" min="-10" max="90" step="1" data-setting="sky.elevation"><output data-value="sky.elevation"></output></label>
+              <label class="setting-row"><span>Sun azimuth</span><input type="range" min="0" max="360" step="1" data-setting="sky.azimuth"><output data-value="sky.azimuth"></output></label>
+              <label class="setting-row"><span>Sun intensity</span><input type="range" min="0" max="8" step="0.1" data-setting="sky.sunIntensity"><output data-value="sky.sunIntensity"></output></label>
+              <label class="setting-row"><span>Ambient intensity</span><input type="range" min="0" max="6" step="0.1" data-setting="sky.ambientIntensity"><output data-value="sky.ambientIntensity"></output></label>
+              <label class="setting-row"><span>Turbidity</span><input type="range" min="0" max="20" step="0.5" data-setting="sky.turbidity"><output data-value="sky.turbidity"></output></label>
+              <label class="setting-row"><span>Rayleigh</span><input type="range" min="0" max="6" step="0.1" data-setting="sky.rayleigh"><output data-value="sky.rayleigh"></output></label>
+              <label class="setting-row"><span>Stars</span><input type="checkbox" data-setting="sky.stars"></label>
+              <p class="settings-note">Sky values are defaults for new places. Use the Environment dock to change the open place.</p>
+            </article>
+
+            <article class="settings-card">
+              <h3><span>◐</span>Appearance</h3>
+              <label class="setting-row"><span>Theme</span><select data-setting="appearance.theme"><option value="midnight">Midnight</option><option value="graphite">Graphite</option><option value="nebula">Nebula</option><option value="daylight">Daylight</option></select></label>
+              <label class="setting-row"><span>Accent color</span><input type="color" data-setting="appearance.accent"></label>
+              <label class="setting-row"><span>Interface font</span><select data-setting="appearance.font"><option value="DM Sans">DM Sans</option><option value="Segoe UI">Segoe UI</option><option value="Inter">Inter</option><option value="Arial">Arial</option></select></label>
+              <label class="setting-row"><span>Code font</span><select data-setting="appearance.mono"><option value="DM Mono">DM Mono</option><option value="Cascadia Code">Cascadia Code</option><option value="Consolas">Consolas</option><option value="Courier New">Courier New</option></select></label>
+              <label class="setting-row"><span>Compact layout</span><input type="checkbox" data-setting="appearance.compact"></label>
+              <label class="setting-row"><span>Show viewport hints</span><input type="checkbox" data-setting="editor.showHints"></label>
+              <div class="settings-preview" id="settings-preview">
+                <span class="eyebrow">PREVIEW</span>
+                <div class="preview-window"><b>My Experience</b><span>12 parts · Skybox: Day</span><button class="primary">Publish</button></div>
+              </div>
+            </article>
+
+            <article class="settings-card">
+              <h3><span>⌘</span>Editor</h3>
+              <label class="setting-row"><span>Snap to grid</span><input type="checkbox" data-setting="editor.snap"></label>
+              <label class="setting-row"><span>Snap increment</span><input type="range" min="0.1" max="4" step="0.1" data-setting="editor.snapIncrement"><output data-value="editor.snapIncrement"></output></label>
+              <label class="setting-row"><span>Rotation snap</span><input type="range" min="1" max="45" step="1" data-setting="editor.rotationSnap"><output data-value="editor.rotationSnap"></output></label>
+              <label class="setting-row"><span>Auto-save</span><input type="checkbox" data-setting="editor.autoSave"></label>
+              <label class="setting-row"><span>Auto-save minutes</span><input type="range" min="1" max="15" step="1" data-setting="editor.autoSaveMinutes"><output data-value="editor.autoSaveMinutes"></output></label>
+              <label class="setting-row"><span>Confirm delete</span><input type="checkbox" data-setting="editor.confirmDelete"></label>
+              <label class="setting-row"><span>Grid size</span><select data-setting="editor.gridSize"><option value="50">50</option><option value="100">100</option><option value="200">200</option><option value="400">400</option></select></label>
+              <div class="settings-actions"><button class="subtle" id="settings-restart">Restart Studio</button></div>
+            </article>
+          </div>
+        </div>
+
+        <!-- Account page -->
+        <div id="account-page" class="home-page hidden">
+          <header class="page-head">
+            <div><span class="eyebrow">REWIND ACCOUNT</span><h1>Account</h1><p>Your creator identity, plan, and studio session.</p></div>
+            <div class="page-actions"><button class="subtle" id="account-manage">Open account page ↗</button></div>
+          </header>
+          <div id="account-info" class="account-layout"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ───────────────────────────── Editor ───────────────────────────── -->
+    <main id="editor-screen" class="screen editor-screen hidden">
+      <nav class="ribbon" aria-label="Studio tools">
+        <div class="ribbon-tabs">
+          <button class="active" data-ribbon="home">Home</button>
+          <button data-ribbon="model">Model</button>
+          <button data-ribbon="test">Test</button>
+          <button data-ribbon="view">View</button>
+          <button data-ribbon="ui">UI</button>
+          <button data-ribbon="script">Script</button>
+          <button data-ribbon="environment">Environment</button>
+          <span class="ribbon-spacer"></span>
+          <span class="ribbon-state" id="ribbon-state">Local project</span>
+        </div>
+
+        <div class="ribbon-pages">
+          <div class="ribbon-page active" data-ribbon-page="home">
+            <div class="tool-cluster">
+              <button class="tool active" data-tool="select"><kbd>Q</kbd><span>↖</span>Select</button>
+              <button class="tool" data-tool="move"><kbd>W</kbd><span>✥</span>Move</button>
+              <button class="tool" data-tool="rotate"><kbd>E</kbd><span>⟳</span>Rotate</button>
+              <button class="tool" data-tool="scale"><kbd>R</kbd><span>⤢</span>Scale</button>
+            </div>
+            <i class="ribbon-divider"></i>
+            <div class="tool-cluster">
+              <button class="tool" data-insert="block"><span>▰</span>Part</button>
+              <button class="tool" data-insert="sphere"><span>●</span>Sphere</button>
+              <button class="tool" data-insert="spawn"><span>⌂</span>Spawn</button>
+              <button class="tool" data-insert="light"><span>☼</span>Light</button>
+            </div>
+            <i class="ribbon-divider"></i>
+            <div class="tool-cluster">
+              <button class="tool" id="undo"><span>↶</span>Undo</button>
+              <button class="tool" id="redo"><span>↷</span>Redo</button>
+            </div>
+            <div class="ribbon-right tool-cluster">
+              <select id="test-mode" aria-label="Test mode"><option value="play">Play</option><option value="here">Play Here</option><option value="run">Run</option></select>
+              <button id="play" class="play-button"><span>▶</span> Play <kbd>F5</kbd></button>
+              <button id="stop" class="stop-button" disabled><span>■</span> Stop</button>
+            </div>
+          </div>
+
+          <div class="ribbon-page" data-ribbon-page="model">
+            <div class="tool-cluster">
+              <button class="tool" data-insert="block"><span>▰</span>Block</button>
+              <button class="tool" data-insert="sphere"><span>●</span>Sphere</button>
+              <button class="tool" data-insert="cylinder"><span>▮</span>Cylinder</button>
+              <button class="tool" data-insert="wedge"><span>◩</span>Wedge</button>
+              <button class="tool" data-insert="torus"><span>◎</span>Torus</button>
+              <button class="tool" data-insert="plane"><span>▭</span>Plane</button>
+              <button class="tool" data-insert="spawn"><span>⌂</span>Spawn</button>
+              <button class="tool" data-insert="light"><span>☼</span>Point light</button>
+            </div>
+            <i class="ribbon-divider"></i>
+            <div class="tool-cluster">
+              <button class="tool" data-insert="bean"><span>♟</span>Bean rig</button>
+              <button class="tool" id="add-ground"><span>▦</span>Baseplate</button>
+              <button class="tool" id="duplicate-selection"><span>⧉</span>Duplicate</button>
+            </div>
+            <div class="ribbon-right tool-cluster">
+              <button class="tool" id="model-open-settings"><span>⚙</span>Graphics settings</button>
+            </div>
+          </div>
+
+          <div class="ribbon-page" data-ribbon-page="test">
+            <div class="tool-cluster">
+              <select id="test-mode-alt" aria-label="Test mode"><option value="play">Play</option><option value="here">Play Here</option><option value="run">Run</option></select>
+              <button id="play-alt" class="play-button"><span>▶</span> Play <kbd>F5</kbd></button>
+              <button id="stop-alt" class="stop-button" disabled><span>■</span> Stop</button>
+            </div>
+            <i class="ribbon-divider"></i>
+            <div class="tool-cluster">
+              <button class="tool" id="focus-output"><span>≡</span>Output</button>
+              <button class="tool" id="clear-output-ribbon"><span>⌫</span>Clear output</button>
+              <button class="tool" id="run-all-scripts"><span>▶</span>Run client scripts</button>
+            </div>
+            <div class="ribbon-right tool-cluster"><span class="ribbon-hint">WASD move · Space jump · Shift run · Esc stop</span></div>
+          </div>
+
+          <div class="ribbon-page" data-ribbon-page="view">
+            <div class="tool-cluster">
+              <button class="tool" id="camera-home"><span>⌂</span>Frame all</button>
+              <button class="tool active" id="toggle-grid"><span>⊞</span>Grid</button>
+              <button class="tool" id="toggle-axes"><span>⋮</span>Axes</button>
+              <button class="tool" id="toggle-ui-preview"><span>▣</span>UI editor</button>
+            </div>
+            <i class="ribbon-divider"></i>
+            <div class="tool-cluster">
+              <button class="tool" id="view-explorer"><span>▤</span>Explorer</button>
+              <button class="tool" id="view-properties"><span>▥</span>Properties</button>
+              <button class="tool" id="view-environment"><span>✦</span>Environment</button>
+              <button class="tool" id="view-local"><span>▤</span>Local projects</button>
+            </div>
+            <div class="ribbon-right tool-cluster"><button class="tool" id="view-settings"><span>⚙</span>Studio settings</button></div>
+          </div>
+
+          <div class="ribbon-page" data-ribbon-page="ui">
+            <div class="tool-cluster">
+              <button class="tool" data-ui="Frame"><span>▭</span>Frame</button>
+              <button class="tool" data-ui="TextLabel"><span>T</span>Text label</button>
+              <button class="tool" data-ui="TextButton"><span>B</span>Button</button>
+              <button class="tool" data-ui="ImageLabel"><span>▧</span>Image</button>
+              <button class="tool" data-ui="ScrollingFrame"><span>≡</span>Scrolling</button>
+            </div>
+            <i class="ribbon-divider"></i>
+            <div class="tool-cluster">
+              <button class="tool" id="ui-toggle-preview"><span>▣</span>Open UI editor</button>
+              <button class="tool" id="ui-delete"><span>⌫</span>Delete UI</button>
+            </div>
+            <div class="ribbon-right tool-cluster"><span class="ribbon-hint">Drag elements in the viewport · edit exact values in Properties</span></div>
+          </div>
+
+          <div class="ribbon-page" data-ribbon-page="script">
+            <div class="tool-cluster">
+              <button class="tool" id="new-script-ribbon"><span>＋</span>New script</button>
+              <button class="tool" id="run-script-ribbon"><span>▶</span>Run Luau</button>
+              <button class="tool" id="format-script"><span>⌘</span>Format</button>
+            </div>
+            <i class="ribbon-divider"></i>
+            <div class="tool-cluster">
+              <label class="ribbon-select-label">Template
+                <select id="script-template"><option value="">Insert template…</option><option value="client">Client script</option><option value="server">Server script</option><option value="leaderstats">Leaderstats</option><option value="part">Create a part</option><option value="datastore">DataStore</option><option value="marketplace">Marketplace prompt</option><option value="tween">Tween animation</option></select>
+              </label>
+              <label class="ribbon-select-label">Script type
+                <select id="script-type-ribbon"><option value="LocalScript">Client</option><option value="ServerScript">Server</option><option value="ModuleScript">Module</option></select>
+              </label>
+            </div>
+            <div class="ribbon-right tool-cluster"><span class="ribbon-hint">Full Luau VM · 5 second preview limit</span></div>
+          </div>
+
+          <div class="ribbon-page" data-ribbon-page="environment">
+            <div class="tool-cluster">
+              <label class="ribbon-select-label">Skybox
+                <select id="sky-preset"><option value="studio">Studio</option><option value="day">Daylight</option><option value="sunset">Golden hour</option><option value="night">Night</option><option value="nebula">Nebula</option><option value="void">Void</option><option value="custom">Custom…</option></select>
+              </label>
+              <button class="tool" id="env-randomize"><span>✦</span>Surprise me</button>
+            </div>
+            <i class="ribbon-divider"></i>
+            <div class="tool-cluster">
+              <label class="ribbon-slider">Sun <input id="sun-elevation" type="range" min="-10" max="90" step="1" value="28"><output id="sun-elevation-value">28</output></label>
+              <label class="ribbon-slider">Fog <input id="fog-far" type="range" min="40" max="400" step="5" value="140"><output id="fog-far-value">140</output></label>
+              <label class="ribbon-slider">Bloom <input id="bloom-strength" type="range" min="0" max="2" step="0.05" value="0.35"><output id="bloom-strength-value">0.35</output></label>
+            </div>
+            <div class="ribbon-right tool-cluster">
+              <button class="tool" id="environment-open-settings"><span>⚙</span>Graphics settings</button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <div class="studio-grid">
+        <!-- Left dock -->
+        <aside class="left-dock dock">
+          <div class="dock-head"><b>Toolbox</b><span class="dock-sub" id="toolbox-sub">Local</span></div>
+          <div class="dock-tabs" role="tablist">
+            <button class="selected" data-left-tab="create" title="Create parts">Create</button>
+            <button data-left-tab="assets" title="Community assets">Assets</button>
+            <button data-left-tab="ui" title="User interface">UI</button>
+            <button data-left-tab="scripts" title="Luau scripts">Scripts</button>
+            <button data-left-tab="local" title="Local projects">Local</button>
+            <button data-left-tab="environment" title="Sky and lighting">Env</button>
+          </div>
+
+          <section class="dock-page" id="left-create">
+            <label class="search"><span>⌕</span><input id="asset-search" placeholder="Search tools" spellcheck="false"></label>
+            <p class="group-label">PARTS</p>
+            <div class="insert-list">
+              <button data-insert="block"><i>▰</i><span><b>Block</b><small>Basic solid part</small></span><kbd>1</kbd></button>
+              <button data-insert="sphere"><i>●</i><span><b>Sphere</b><small>Round primitive</small></span></button>
+              <button data-insert="cylinder"><i>▮</i><span><b>Cylinder</b><small>Round column</small></span></button>
+              <button data-insert="wedge"><i>◩</i><span><b>Wedge</b><small>Sloped block</small></span></button>
+              <button data-insert="torus"><i>◎</i><span><b>Torus</b><small>Ring primitive</small></span></button>
+              <button data-insert="plane"><i>▭</i><span><b>Plane</b><small>Thin platform</small></span></button>
+              <button data-insert="spawn"><i>⌂</i><span><b>Spawn point</b><small>Player start location</small></span></button>
+              <button data-insert="bean"><i>♟</i><span><b>Bean character</b><small>Simple test rig</small></span></button>
+              <button data-insert="light"><i>☼</i><span><b>Point light</b><small>Local scene light</small></span></button>
+            </div>
+            <p class="group-label">SCENE</p>
+            <button class="wide-action" id="add-ground">＋ Add baseplate</button>
+            <div class="asset-note">Parts are local to this project. Community models and decals are in the Assets tab.</div>
+          </section>
+
+          <section class="dock-page hidden" id="left-assets">
+            <div class="asset-toolbar">
+              <button class="wide-action" id="refresh-assets">Refresh community assets</button>
+              <input id="catalog-search" class="catalog-search" placeholder="Filter approved assets" spellcheck="false">
+            </div>
+            <div id="asset-catalog" class="asset-catalog"><div class="asset-note">Sign in to load REWIND assets.</div></div>
+          </section>
+
+          <section class="dock-page hidden" id="left-ui">
+            <p class="group-label">STARTER GUI</p>
+            <div class="insert-list">
+              <button data-ui="Frame"><i>▭</i><span><b>Frame</b><small>Container</small></span></button>
+              <button data-ui="TextLabel"><i>T</i><span><b>Text label</b><small>Static text</small></span></button>
+              <button data-ui="TextButton"><i>B</i><span><b>Button</b><small>Interactive control</small></span></button>
+              <button data-ui="ImageLabel"><i>▧</i><span><b>Image</b><small>Image display</small></span></button>
+              <button data-ui="ScrollingFrame"><i>≡</i><span><b>Scrolling frame</b><small>Scrollable container</small></span></button>
+            </div>
+            <div class="asset-note">Arrange UI in the shared viewport. Resize and style from Properties.</div>
+          </section>
+
+          <section class="dock-page hidden" id="left-scripts">
+            <p class="group-label">PROJECT SCRIPTS <button id="new-script" class="text-action">+ New</button></p>
+            <div id="script-list" class="script-list"></div>
+            <label class="field-label">Script name<input id="script-name" value="Script" maxlength="64" spellcheck="false"></label>
+            <label class="field-label">Script type<select id="script-type"><option value="LocalScript">Client Script</option><option value="ServerScript">Server Script</option><option value="ModuleScript">Module Script</option></select></label>
+            <div class="script-editor">
+              <div id="script-gutter" class="script-gutter">1</div>
+              <div class="script-code-wrap">
+                <pre id="script-highlight" class="script-highlight" aria-hidden="true"></pre>
+                <textarea id="script-source" spellcheck="false" class="script-source">print("Hello from REWIND")</textarea>
+                <div id="script-suggestions" class="script-suggestions hidden"></div>
+              </div>
+            </div>
+            <div class="script-actions">
+              <button class="wide-action" id="run-script">▶ Run Luau</button>
+              <button class="subtle" id="save-script">Save script</button>
+            </div>
+            <div class="asset-note">Full Luau runs in an isolated worker. Client scripts preview locally; server scripts can also be synced to a published place.</div>
+          </section>
+
+          <section class="dock-page hidden" id="left-local">
+            <div class="local-dock-head">
+              <b>Local Projects</b>
+              <div><button class="text-action" id="local-dock-refresh">Refresh</button><button class="text-action" id="local-dock-save">Save current</button></div>
+            </div>
+            <div id="local-dock-list" class="local-dock-list"></div>
+            <button class="wide-action" id="local-dock-open">Open project file…</button>
+            <div class="asset-note">Saved projects live in your Windows app-data folder. Export any place to share a single <code>.rwdplace</code> file.</div>
+          </section>
+
+          <section class="dock-page hidden" id="left-environment">
+            <p class="group-label">SKYBOX</p>
+            <label class="field-label">Preset<select id="env-preset"><option value="studio">Studio</option><option value="day">Daylight</option><option value="sunset">Golden hour</option><option value="night">Night</option><option value="nebula">Nebula</option><option value="void">Void</option><option value="custom">Custom…</option></select></label>
+            <div class="env-slider"><span>Sun elevation</span><input id="env-elevation" type="range" min="-10" max="90" step="1" value="28"><output id="env-elevation-value">28</output></div>
+            <div class="env-slider"><span>Sun azimuth</span><input id="env-azimuth" type="range" min="0" max="360" step="1" value="140"><output id="env-azimuth-value">140</output></div>
+            <div class="env-slider"><span>Turbidity</span><input id="env-turbidity" type="range" min="0" max="20" step="0.5" value="7"><output id="env-turbidity-value">7</output></div>
+            <div class="env-slider"><span>Sun power</span><input id="env-sun" type="range" min="0" max="8" step="0.1" value="3"><output id="env-sun-value">3</output></div>
+            <div class="env-slider"><span>Ambient</span><input id="env-ambient" type="range" min="0" max="6" step="0.1" value="2.3"><output id="env-ambient-value">2.3</output></div>
+            <div class="env-slider"><span>Exposure</span><input id="env-exposure" type="range" min="0.2" max="2.5" step="0.05" value="1.05"><output id="env-exposure-value">1.05</output></div>
+            <label class="check-row"><input id="env-fog" type="checkbox" checked> Distance fog</label>
+            <div class="env-slider"><span>Fog far</span><input id="env-fog-far" type="range" min="40" max="400" step="5" value="140"><output id="env-fog-far-value">140</output></div>
+            <label class="check-row"><input id="env-stars" type="checkbox"> Star field</label>
+            <label class="check-row"><input id="env-bloom" type="checkbox" checked> Bloom</label>
+            <div class="env-slider"><span>Bloom</span><input id="env-bloom-strength" type="range" min="0" max="2" step="0.05" value="0.35"><output id="env-bloom-strength-value">0.35</output></div>
+            <div class="env-buttons">
+              <button class="subtle" id="env-custom-skybox">Six-image skybox…</button>
+              <button class="subtle" id="env-clear-skybox">Clear custom</button>
+            </div>
+            <button class="wide-action" id="env-open-graphics">Advanced graphics settings</button>
+            <div class="asset-note">Custom skyboxes use six images in this order: right, left, top, bottom, front, back.</div>
+          </section>
+        </aside>
+
+        <!-- Center -->
+        <section class="center-dock">
+          <div class="viewport-tabs">
+            <button class="active">3D Viewport <span>×</span></button>
+            <button id="new-viewport" title="Add viewport tab">＋</button>
+            <div class="viewport-controls">
+              <button id="camera-home-2" title="Frame all">⌂</button>
+              <button id="toggle-grid-2" class="active" title="Toggle grid">⊞</button>
+              <button id="toggle-axes-2" title="Toggle axes">⋮</button>
+              <span id="camera-mode-label">Perspective ▾</span>
+            </div>
+          </div>
+          <div class="viewport-wrap" id="viewport-wrap">
+            <canvas id="scene-canvas"></canvas>
+            <div id="ui-preview" class="ui-preview hidden">
+              <div class="ui-preview-corner">STARTER GUI · 1280 × 720</div>
+              <div id="ui-elements" class="ui-elements"></div>
+            </div>
+            <div class="viewport-status">
+              <span class="status-dot"></span>
+              <span id="mode-label">EDIT MODE</span>
+              <span class="status-divider">/</span>
+              <span id="scene-count">0 objects</span>
+            </div>
+            <div class="viewport-hint" id="viewport-hint">Right-drag orbit · scroll zoom · click to select · WASD to move</div>
+            <div class="axis-widget"><span class="axis-x">X</span><span class="axis-y">Y</span><span class="axis-z">Z</span></div>
+            <div class="camera-readout" id="camera-readout">Perspective · 55°</div>
+          </div>
+
+          <section class="output-dock">
+            <div class="output-head">
+              <div><b>Output</b><span class="output-counter" id="output-count">0</span></div>
+              <div><button id="clear-output">Clear</button><button id="toggle-output">⌄</button></div>
+            </div>
+            <div id="output-lines" class="output-lines"><div class="output-muted">Output, Luau messages, and playtest events appear here.</div></div>
+          </section>
+
+          <div class="statusbar">
+            <span id="selection-status">No selection</span>
+            <span id="coord-status">X 0.0 · Y 0.0 · Z 0.0</span>
+            <span class="status-spacer"></span>
+            <span id="fps-status">-- FPS</span>
+            <span>REWIND Studio · Desktop</span>
+          </div>
+        </section>
+
+        <!-- Right dock -->
+        <aside class="right-dock dock">
+          <section class="explorer-panel">
+            <div class="dock-head"><b>Explorer</b><button id="add-object" class="add-mini" title="Insert part">＋</button></div>
+            <label class="search"><span>⌕</span><input id="tree-search" placeholder="Filter instances" spellcheck="false"></label>
+            <div class="tree-view" id="tree-view"></div>
+          </section>
+          <section class="properties-panel">
+            <div class="dock-head"><b>Properties</b><span class="class-name" id="class-name">—</span></div>
+            <label class="search"><span>⌕</span><input id="property-search" placeholder="Filter properties" spellcheck="false"></label>
+            <div class="properties-body" id="properties-body"><div class="properties-empty">Select an instance in the viewport or Explorer to inspect its properties.</div></div>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <!-- ───────────────────────────── Dialogs ───────────────────────────── -->
+  <dialog id="create-dialog" class="studio-dialog">
+    <form method="dialog" class="dialog-head"><b>Create a new experience</b><button aria-label="Close">×</button></form>
+    <form id="create-form" class="dialog-content">
+      <label class="field-label">Experience name<input id="create-name" maxlength="60" required value="My New Experience" spellcheck="false"></label>
+      <label class="field-label">Description<textarea id="create-description" maxlength="2000" rows="2" placeholder="What are you building?"></textarea></label>
+      <div class="two-col">
+        <label class="field-label">Genre<input id="create-genre" maxlength="40" value="All" spellcheck="false"></label>
+        <label class="field-label">Visibility<select id="create-privacy"><option value="private">Private</option><option value="public">Public</option><option value="friends">Friends only</option></select></label>
+      </div>
+      <p class="group-label">TEMPLATE</p>
+      <div id="create-templates" class="create-templates"></div>
+      <div class="icon-picker">
+        <div class="icon-preview" id="create-icon-preview">▦</div>
+        <div><b>Experience icon</b><small>Optional. Uploads a game icon to REWIND.</small></div>
+        <button type="button" id="create-icon" class="subtle">Choose image</button>
+      </div>
+      <p id="create-message" class="dialog-message"></p>
+      <div class="dialog-actions">
+        <button type="button" id="create-local" class="subtle">Create locally</button>
+        <button type="submit" id="create-submit" class="primary">Create experience</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="publish-dialog" class="studio-dialog">
+    <form method="dialog" class="dialog-head"><b>Publish to REWIND</b><button aria-label="Close">×</button></form>
+    <div class="dialog-content">
+      <p>Publish this project to your REWIND account. Re-publishing updates the linked place.</p>
+      <label class="field-label">Place name<input id="publish-name" maxlength="60" spellcheck="false"></label>
+      <label class="field-label">Description<textarea id="publish-description" maxlength="2000" rows="2"></textarea></label>
+      <div class="two-col">
+        <label class="field-label">Genre<input id="publish-genre" maxlength="40" value="All" spellcheck="false"></label>
+        <label class="field-label">Visibility<select id="publish-privacy"><option value="private">Private</option><option value="public">Public</option><option value="friends">Friends only</option></select></label>
+      </div>
+      <p id="publish-message" class="dialog-message"></p>
+      <div class="dialog-actions"><button type="button" class="subtle" data-close-dialog>Cancel</button><button class="primary" id="publish-submit">Publish place</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="about-dialog" class="studio-dialog small">
+    <form method="dialog" class="dialog-head"><b>About REWIND Studio</b><button aria-label="Close">×</button></form>
+    <div class="dialog-content">
+      <p><b>REWIND Studio</b> is a local-first desktop editor. Projects are JSON files with a <code>.rwdproj</code> extension; exported places use <code>.rwdplace</code>.</p>
+      <p>The editor connects to <code id="about-api">api.rwd.2bd.net</code> for accounts, cloud places, assets, and published server scripts.</p>
+      <p id="about-version" class="dialog-message"></p>
+    </div>
+  </dialog>
+
+  <div id="toast-host" class="toast-host"></div>
+  <div id="loading-overlay" class="loading-overlay hidden"><div class="loading-card"><span class="spinner"></span><b id="loading-text">Loading…</b><div class="loading-track"><div id="loading-bar"></div></div></div></div>
+
+  <script type="module" src="./renderer.js"></script>
+</body>
+</html>

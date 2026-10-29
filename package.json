@@ -1,0 +1,38 @@
+{
+  "name": "rewind-studio",
+  "version": "0.2.0",
+  "private": true,
+  "description": "REWIND Studio desktop editor for Windows",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win nsis"
+  },
+  "dependencies": {
+    "luau-web": "1.5.1",
+    "three": "0.186.0"
+  },
+  "devDependencies": {
+    "electron": "45.1.0",
+    "electron-builder": "26.18.0"
+  },
+  "allowScripts": {
+    "electron": true,
+    "electron-winstaller": true
+  },
+  "build": {
+    "appId": "net.rewind.studio",
+    "productName": "REWIND Studio",
+    "directories": { "output": "release" },
+    "files": ["**/*", "!release/**", "!node_modules/.cache/**"],
+    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

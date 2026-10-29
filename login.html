@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' rewind:; script-src 'self' rewind:; style-src 'self' 'unsafe-inline'; img-src 'self' rewind: https: data:; connect-src 'self' rewind: https:;">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sign in · REWIND Studio</title>
+  <link rel="stylesheet" href="./login.css">
+</head>
+<body>
+  <div class="login-glow"></div>
+  <main class="login-card">
+    <header class="login-brand">
+      <img src="./assets/rewind-mark.svg" alt="">
+      <div><b>REWIND</b><span>STUDIO</span></div>
+    </header>
+
+    <section class="login-heading">
+      <span class="eyebrow">ACCOUNT</span>
+      <h1>Welcome back.</h1>
+      <p>Sign in to load your experiences, publish places, and sync your REWIND projects.</p>
+    </section>
+
+    <form id="login-form" autocomplete="on">
+      <label class="field">
+        <span>Username</span>
+        <input id="username" name="username" autocomplete="username" spellcheck="false" required autofocus>
+      </label>
+      <label class="field">
+        <span>Password</span>
+        <div class="password-wrap">
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+          <button type="button" id="toggle-password" class="ghost" aria-label="Show password">Show</button>
+        </div>
+      </label>
+      <p id="login-message" class="login-message" role="status"></p>
+      <button type="submit" id="login-submit" class="primary">Sign in</button>
+    </form>
+
+    <div class="login-links">
+      <button type="button" id="create-account" class="link">Create an account</button>
+      <span>·</span>
+      <button type="button" id="continue-guest" class="link">Continue without signing in</button>
+    </div>
+
+    <footer class="login-foot">
+      <span id="api-label">api.rwd.2bd.net</span>
+      <span>Local projects always work offline.</span>
+    </footer>
+  </main>
+  <script src="./login.js"></script>
+</body>
+</html>
